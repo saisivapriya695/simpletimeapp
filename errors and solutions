@@ -1,0 +1,84 @@
+1. Docker Build Fails Due to Permissions
+Error Message:
+
+Permission denied: running as root is not allowed
+Cause: You were trying to run the container as root, which was against your task requirement.
+
+Solution: Create a non-root user in your Dockerfile:
+
+RUN adduser --disabled-password appuser
+USER appuser
+
+2. App Crashes on Start
+Error Message:
+
+ModuleNotFoundError: No module named 'flask'
+Cause: Flask was not installed in the Docker container.
+
+Solution:  Add Flask to requirements.txt and install it in your Dockerfile:
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+3. Invalid JSON Output
+Issue: The Flask app didn’t return valid JSON or didn’t include IP or timestamp.
+
+Solution: Ensure the app returns correct JSON:
+
+@app.route('/')
+def home():
+    return jsonify({
+        "timestamp": datetime.utcnow().isoformat(),
+        "ip": request.remote_addr
+    })
+
+4. DockerHub Push Fails
+Error Message:
+
+denied: requested access to the resource is denied
+Cause: You were not logged into DockerHub or used the wrong repo/image name.
+
+Solution: Login and tag correctly:
+
+docker login
+docker tag simpletimeservice YOUR_DOCKERHUB_USERNAME/simpletimeservice:latest
+docker push YOUR_DOCKERHUB_USERNAME/simpletimeservice:latest
+
+5. Container Doesn't Run as Non-root
+Error: The container still runs as root even after USER directive.
+
+Cause: Base image doesn't switch users cleanly or volumes have root ownership.
+
+Solution: Use proper user creation and file permission setup:
+
+RUN adduser --disabled-password appuser
+USER appuser
+And make sure no volumes require root access.
+
+6. CORS/Browser Issues While Testing
+Issue: Frontend or tools like Postman give errors due to missing headers.
+
+Solution:  Add CORS headers if needed (optional):
+
+from flask_cors import CORS
+CORS(apps)
+
+7. Docker Image Works Locally but Crashes in Cloud
+Cause: Environment-specific behavior or hardcoded localhost values.
+
+Solution: Always bind to 0.0.0.0 inside Docker:
+
+app.run(host="0.0.0.0", port=8080)
+
+8. Exposing Wrong Port
+Issue: Container is not accessible or always restarts.
+
+Cause: Port mismatch between app and Docker.
+
+Solution:Use correct port in Dockerfile:
+
+EXPOSE 8080
+And run using:
+
+docker run -p 8080:8080 your-image
+
